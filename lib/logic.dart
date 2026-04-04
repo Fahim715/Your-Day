@@ -180,14 +180,50 @@ AppState confirmPriorities(AppState state) => state.copyWith(
 
 AppState setRepeatDays(AppState state, int days) {
   final clamped = days.clamp(1, 365);
+  final nextDayIndex = state.dayIndex <= 0 ? 1 : state.dayIndex;
   final rehydrate = state.currentTasks.isEmpty &&
       state.templates.isNotEmpty &&
-      state.dayIndex <= clamped;
+      nextDayIndex <= clamped;
   return state.copyWith(
     repeatDays: clamped,
+    dayIndex: nextDayIndex,
     currentTasks: rehydrate
         ? buildTasksFromTemplates(state.templates)
         : state.currentTasks,
+  );
+}
+
+AppState resetProgress(AppState state) {
+  final cal = getCalendarInfo();
+  return state.copyWith(
+    cycleStartKey: cal.key,
+    currentDayKey: cal.key,
+    currentDayLabel: cal.label,
+    currentDayFullLabel: cal.fullLabel,
+    dayIndex: 1,
+    currentTasks: buildTasksFromTemplates(state.templates),
+    history: const [],
+    prioritiesConfirmed: false,
+    clearConfirmedAt: true,
+    lastSyncedAt: DateTime.now().toIso8601String(),
+  );
+}
+
+AppState resetEverything(AppState state) {
+  final cal = getCalendarInfo();
+  return state.copyWith(
+    repeatDays: 0,
+    cycleStartKey: cal.key,
+    currentDayKey: cal.key,
+    currentDayLabel: cal.label,
+    currentDayFullLabel: cal.fullLabel,
+    dayIndex: 0,
+    templates: const [],
+    currentTasks: const [],
+    history: const [],
+    prioritiesConfirmed: false,
+    clearConfirmedAt: true,
+    lastSyncedAt: DateTime.now().toIso8601String(),
   );
 }
 
