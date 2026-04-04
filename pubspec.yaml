@@ -20,6 +20,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - images/bright_theme.jpeg
+    - images/dark_theme.jpeg
 
 flutter_launcher_icons:
   android: true
