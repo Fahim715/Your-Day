@@ -195,10 +195,10 @@ class _HeaderState extends State<_Header> {
     final tt = Theme.of(context).textTheme;
 
     final progressNote = widget.isCycleDone
-        ? 'Repeat cycle done. Extend the repeat window to continue.'
+      ? 'Repeat cycle done. Extend the repeat window to continue.'
       : widget.state.prioritiesConfirmed
-            ? 'Weighted progress active.'
-            : 'Confirm priorities to split 100% by weight.';
+        ? 'Weighted progress active.'
+        : '';
 
     final daysLeft =
         (widget.state.repeatDays - widget.state.dayIndex + 1).clamp(0, 365);
@@ -346,8 +346,9 @@ class _HeaderState extends State<_Header> {
           const SizedBox(height: 8),
 
           // Note
-          Text(progressNote,
-              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+          if (progressNote.isNotEmpty)
+            Text(progressNote,
+                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
 
           // Flash message
           if (widget.flash.isNotEmpty) ...[
