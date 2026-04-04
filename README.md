@@ -38,7 +38,7 @@ Build habits across repeating cycles with a priority-weighted progress system.
 | | |
 |---|---|
 | **Weighted priorities** | Low · Medium · High · *No way I can miss* → 1 / 2 / 5 / 10 pts |
-| **Progress ring** | Visual horseshoe ring — turns green at 80%+ completion |
+| **Progress bar** | Visual progress — turns green at 80%+ completion |
 | **Repeat cycles** | Set how many days your task list runs before resetting |
 | **Daily archiving** | Each day's result is saved automatically to History |
 | **Reset controls** | Reset progress only, or reset everything with confirmation |
@@ -51,7 +51,7 @@ Build habits across repeating cycles with a priority-weighted progress system.
 
 1. **Add tasks** — type a task name, pick a priority, tap **+**
 2. **Set a cycle** — tap **Repeat For?**, enter the number of days, tap **Confirm**
-3. **Track daily** — check off tasks; the progress ring updates in real time
+3. **Track daily** — check off tasks; the progress bar updates in real time
 4. **Review history** — open the **History** tab to see past days and scores
 
 ---
