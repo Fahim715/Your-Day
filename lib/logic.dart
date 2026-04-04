@@ -18,7 +18,7 @@ class CalendarInfo {
 }
 
 CalendarInfo getCalendarInfo([DateTime? date]) {
-  final d = date ?? DateTime.now();
+  final d = (date ?? DateTime.now()).toLocal();
   final h = HijriCalendar.fromDate(d);
   final day = h.hDay.toString();
   final month = _monthNames[h.hMonth - 1];
