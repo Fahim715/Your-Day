@@ -21,8 +21,6 @@ Track your intentions across repeating cycles — anchored to the Islamic Hijri 
 
 <br />
 
-![Build APK](https://github.com/Fahim715/Your-Day/actions/workflows/build.yml/badge.svg)
-
 </div>
 
 ---
