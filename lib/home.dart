@@ -137,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen>
 
 // ── Header ────────────────────────────────────────────────────────────────────
 
-class _Header extends StatelessWidget {
+class _Header extends StatefulWidget {
   final AppState state;
   final ProgressStats stats;
   final bool isCycleDone;
@@ -157,15 +157,51 @@ class _Header extends StatelessWidget {
   });
 
   @override
+  State<_Header> createState() => _HeaderState();
+}
+
+class _HeaderState extends State<_Header> {
+  late final TextEditingController _repeatCtrl;
+  late final FocusNode _repeatFocus;
+  Timer? _repeatDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _repeatCtrl = TextEditingController(text: widget.state.repeatDays.toString());
+    _repeatFocus = FocusNode();
+  }
+
+  @override
+  void didUpdateWidget(covariant _Header oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final nextText = widget.state.repeatDays.toString();
+    if (!_repeatFocus.hasFocus && _repeatCtrl.text != nextText) {
+      _repeatCtrl.text = nextText;
+    }
+  }
+
+  @override
+  void dispose() {
+    _repeatDebounce?.cancel();
+    _repeatCtrl.dispose();
+    _repeatFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
-    final progressNote = isCycleDone
+    final progressNote = widget.isCycleDone
         ? 'Repeat cycle done. Extend the repeat window to continue.'
-        : state.prioritiesConfirmed
+      : widget.state.prioritiesConfirmed
             ? 'Weighted progress active.'
             : 'Confirm priorities to split 100% by weight.';
+
+    final daysLeft =
+        (widget.state.repeatDays - widget.state.dayIndex + 1).clamp(0, 365);
 
     return Container(
       color: cs.surface,
@@ -189,9 +225,9 @@ class _Header extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      state.currentDayFullLabel.isEmpty
+                      widget.state.currentDayFullLabel.isEmpty
                           ? 'Your Day'
-                          : state.currentDayFullLabel,
+                          : widget.state.currentDayFullLabel,
                       style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -199,80 +235,25 @@ class _Header extends StatelessWidget {
               ),
               IconButton(
                 icon: Icon(
-                  state.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                  widget.state.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
                   size: 20,
                 ),
-                onPressed: onToggleTheme,
-                tooltip: state.isDark ? 'Light theme' : 'Dark theme',
+                onPressed: widget.onToggleTheme,
+                tooltip: widget.state.isDark ? 'Light theme' : 'Dark theme',
               ),
             ],
           ),
 
           const SizedBox(height: 12),
 
-          // Stats row
+          // Days left + repeat input row
           Row(
             children: [
               _StatChip(
-                label: 'Day',
-                value:
-                    '${state.dayIndex.clamp(1, state.repeatDays)} / ${state.repeatDays}',
+                label: 'Days left',
+                value: '$daysLeft',
               ),
-              const SizedBox(width: 8),
-              _StatChip(
-                label: 'Tasks',
-                value: '${state.currentTasks.length}',
-              ),
-              const SizedBox(width: 8),
-              _StatChip(
-                label: 'Progress',
-                value: '${stats.progress}%',
-                highlight: true,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Progress bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: stats.progress / 100,
-              minHeight: 6,
-              backgroundColor: cs.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${stats.completedWeight} / ${stats.totalWeight} pts',
-                style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
-              ),
-              Text(
-                state.prioritiesConfirmed ? 'Confirmed ✓' : 'Pending',
-                style: tt.labelSmall?.copyWith(
-                  color: state.prioritiesConfirmed ? cs.primary : cs.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          // Note
-          Text(progressNote,
-              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-
-          const SizedBox(height: 10),
-
-          // Actions row
-          Row(
-            children: [
-              // Repeat days
+              const SizedBox(width: 10),
               Row(
                 children: [
                   Text('Repeat:', style: tt.labelMedium),
@@ -281,6 +262,7 @@ class _Header extends StatelessWidget {
                     width: 52,
                     height: 32,
                     child: TextField(
+                      focusNode: _repeatFocus,
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
                       style: tt.bodyMedium,
@@ -293,14 +275,14 @@ class _Header extends StatelessWidget {
                           borderSide: BorderSide(color: cs.outline),
                         ),
                       ),
-                      controller: TextEditingController(
-                        text: state.repeatDays.toString(),
-                      )..selection = TextSelection.collapsed(
-                          offset: state.repeatDays.toString().length),
+                      controller: _repeatCtrl,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onSubmitted: (v) {
-                        final parsed = int.tryParse(v) ?? state.repeatDays;
-                        onRepeatChanged(parsed);
+                      onChanged: (v) {
+                        _repeatDebounce?.cancel();
+                        _repeatDebounce = Timer(const Duration(seconds: 2), () {
+                          final parsed = int.tryParse(v);
+                          if (parsed != null) widget.onRepeatChanged(parsed);
+                        });
                       },
                     ),
                   ),
@@ -309,25 +291,68 @@ class _Header extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              FilledButton.tonal(
-                onPressed: onConfirm,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  state.prioritiesConfirmed ? 'Reconfirm' : 'Confirm priorities',
-                  style: tt.labelMedium,
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Task + progress row
+          Row(
+            children: [
+              _StatChip(
+                label: 'Tasks',
+                value: '${widget.state.currentTasks.length}',
+              ),
+              const SizedBox(width: 8),
+              _StatChip(
+                label: 'Progress',
+                value: '${widget.stats.progress}%',
+                highlight: true,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: widget.stats.progress / 100,
+              minHeight: 6,
+              backgroundColor: cs.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${widget.stats.completedWeight} / ${widget.stats.totalWeight} pts',
+                style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+              ),
+              Text(
+                widget.state.prioritiesConfirmed ? 'Confirmed ✓' : 'Pending',
+                style: tt.labelSmall?.copyWith(
+                  color: widget.state.prioritiesConfirmed
+                      ? cs.primary
+                      : cs.onSurfaceVariant,
                 ),
               ),
             ],
           ),
 
+          const SizedBox(height: 8),
+
+          // Note
+          Text(progressNote,
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+
           // Flash message
-          if (flash.isNotEmpty) ...[
+          if (widget.flash.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(flash,
+            Text(widget.flash,
                 style:
                     tt.bodySmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w500)),
           ],
