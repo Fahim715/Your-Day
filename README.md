@@ -14,14 +14,14 @@ Track your intentions across repeating cycles — anchored to the Islamic Hijri 
 
 <br />
 
-[![Download APK](https://img.shields.io/badge/⬇️%20Download%20APK-Latest%20Release-c0644a?style=for-the-badge)](https://github.com/YOUR_USERNAME/YOUR_REPO/releases/latest/download/YourDay.apk)
+[![Download APK](https://img.shields.io/badge/⬇️%20Download%20APK-Latest%20Release-c0644a?style=for-the-badge)](https://github.com/Fahim715/Your-Day/releases/latest/download/YourDay.apk)
 
 > **First-time install on Android?**  
 > Settings → Apps → Special app access → Install unknown apps → your browser → **Allow**
 
 <br />
 
-![Build APK](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/build.yml/badge.svg)
+![Build APK](https://github.com/Fahim715/Your-Day/actions/workflows/build.yml/badge.svg)
 
 </div>
 
