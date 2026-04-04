@@ -17,7 +17,7 @@ Build habits across repeating cycles with a priority-weighted progress system.
 
 <br /><br />
 
-[![Download APK](https://img.shields.io/badge/⬇️%20Download%20APK-Latest%20Release-c0644a?style=for-the-badge)](https://github.com/Fahim715/Your-Day/releases/download/v1.0.0/app-release.apk)
+[![Download APK](https://img.shields.io/badge/⬇️%20Download%20APK-Latest%20Release-c0644a?style=for-the-badge)](https://github.com/Fahim715/Your-Day/releases/download/v1.1.0/app-release.apk)
 
 > **First-time install?** On Android: Settings → Apps → Special app access → Install unknown apps → allow your browser
 
