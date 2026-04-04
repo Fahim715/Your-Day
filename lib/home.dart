@@ -1,7 +1,7 @@
 // lib/home.dart
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'logic.dart';
 import 'models.dart';
@@ -78,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: false,
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
@@ -105,6 +106,14 @@ class _HomeScreenState extends State<HomeScreen>
               onRepeatChanged: (v) {
                 widget.onUpdate((s) => setRepeatDays(s, v));
                 _showFlash('Repeat set to $v days.');
+              },
+              onResetProgress: () {
+                widget.onUpdate(resetProgress);
+                _showFlash('Progress reset. History cleared.');
+              },
+              onResetEverything: () {
+                widget.onUpdate(resetEverything);
+                _showFlash('Everything reset.');
               },
             ),
             _AddTaskBar(
@@ -158,6 +167,8 @@ class _Header extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final VoidCallback onConfirm;
   final void Function(int) onRepeatChanged;
+  final VoidCallback onResetProgress;
+  final VoidCallback onResetEverything;
 
   const _Header({
     required this.state,
@@ -167,6 +178,8 @@ class _Header extends StatefulWidget {
     required this.onToggleTheme,
     required this.onConfirm,
     required this.onRepeatChanged,
+    required this.onResetProgress,
+    required this.onResetEverything,
   });
 
   @override
@@ -174,34 +187,6 @@ class _Header extends StatefulWidget {
 }
 
 class _HeaderState extends State<_Header> {
-  late final TextEditingController _repeatCtrl;
-  late final FocusNode _repeatFocus;
-  Timer? _repeatDebounce;
-
-  @override
-  void initState() {
-    super.initState();
-    _repeatCtrl = TextEditingController(text: widget.state.repeatDays.toString());
-    _repeatFocus = FocusNode();
-  }
-
-  @override
-  void didUpdateWidget(covariant _Header oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final nextText = widget.state.repeatDays.toString();
-    if (!_repeatFocus.hasFocus && _repeatCtrl.text != nextText) {
-      _repeatCtrl.text = nextText;
-    }
-  }
-
-  @override
-  void dispose() {
-    _repeatDebounce?.cancel();
-    _repeatCtrl.dispose();
-    _repeatFocus.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -213,17 +198,87 @@ class _HeaderState extends State<_Header> {
         ? 'Weighted progress active.'
         : '';
 
-    final daysLeft =
-        (widget.state.repeatDays - widget.state.dayIndex + 1).clamp(0, 365);
+    final repeatLabel = widget.state.repeatDays <= 0
+      ? 'Repeat For?'
+      : 'Day ${widget.state.dayIndex <= 0 ? 1 : widget.state.dayIndex}/${widget.state.repeatDays}';
+
+    Future<void> showResetDialog() async {
+      await showDialog<void>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Reset options'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    widget.onResetProgress();
+                  },
+                  child: const Text('Reset Your Progress'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    showDialog<void>(
+                      context: this.context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text('Confirm Reset Everything'),
+                          content: const Text(
+                            'This will clear all tasks, history, and reset repeat days to 0. Continue?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Cancel'),
+                            ),
+                            FilledButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                widget.onResetEverything();
+                              },
+                              child: const Text('Yes, Reset Everything'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: const Text('Reset Everything'),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    Future<void> showRepeatForDialog() async {
+      final selectedDays = await showDialog<int>(
+        context: context,
+        builder: (_) => _RepeatDialog(
+          initialValue: widget.state.repeatDays > 0 ? widget.state.repeatDays : null,
+        ),
+      );
+
+      if (selectedDays != null) {
+        widget.onRepeatChanged(selectedDays);
+      }
+    }
 
     return Container(
       color: cs.surface,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row
+          // Top row: title + circular progress + theme toggle
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
@@ -241,142 +296,94 @@ class _HeaderState extends State<_Header> {
                       widget.state.currentDayFullLabel.isEmpty
                           ? 'Your Day'
                           : widget.state.currentDayFullLabel,
-                      style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                      style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+                    // Stats row
+                    Row(
+                      children: [
+                        _StatChip(
+                          label: 'Tasks',
+                          value: '${widget.state.currentTasks.length}',
+                          highlight: true,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        OutlinedButton(
+                          onPressed: showRepeatForDialog,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(112, 30),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(repeatLabel),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: showResetDialog,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(66, 30),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Reset'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                icon: Icon(
-                  widget.state.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                  size: 20,
-                ),
-                onPressed: widget.onToggleTheme,
-                tooltip: widget.state.isDark ? 'Light theme' : 'Dark theme',
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Days left + repeat input row
-          Row(
-            children: [
-              _StatChip(
-                label: 'Days left',
-                value: '$daysLeft',
-              ),
-              const SizedBox(width: 10),
-              Row(
-                children: [
-                  Text('Repeat:', style: tt.labelMedium),
-                  const SizedBox(width: 6),
-                  SizedBox(
-                    width: 52,
-                    height: 32,
-                    child: TextField(
-                      focusNode: _repeatFocus,
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      style: tt.bodyMedium,
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: cs.outline),
-                        ),
-                      ),
-                      controller: _repeatCtrl,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onChanged: (v) {
-                        _repeatDebounce?.cancel();
-                        _repeatDebounce = Timer(const Duration(seconds: 2), () {
-                          final parsed = int.tryParse(v);
-                          if (parsed != null) widget.onRepeatChanged(parsed);
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text('days', style: tt.labelMedium),
-                ],
-              ),
-              const Spacer(),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Task + progress row
-          Row(
-            children: [
-              _StatChip(
-                label: 'Tasks',
-                value: '${widget.state.currentTasks.length}',
               ),
               const SizedBox(width: 8),
-              _StatChip(
-                label: 'Progress',
-                value: '${widget.stats.progress}%',
-                highlight: true,
+              // Circular progress + theme toggle stacked
+              Column(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      widget.state.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                      size: 20,
+                    ),
+                    onPressed: widget.onToggleTheme,
+                    tooltip: widget.state.isDark ? 'Light theme' : 'Dark theme',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: 96,
+                    height: 96,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            color: cs.surface.withOpacity(0.75),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(
+                            begin: 0,
+                            end: widget.stats.progress / 100,
+                          ),
+                          duration: const Duration(milliseconds: 800),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, _) =>
+                              CircularProgressBar(progress: value),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
-
-          // Progress summary + circle
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${widget.stats.completedWeight} / ${widget.stats.totalWeight} pts',
-                      style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.state.prioritiesConfirmed ? 'Confirmed ✓' : 'Pending',
-                      style: tt.labelSmall?.copyWith(
-                        color: widget.state.prioritiesConfirmed
-                            ? cs.primary
-                            : cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 56,
-                height: 56,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: widget.stats.progress / 100,
-                      strokeWidth: 6,
-                      backgroundColor: cs.surfaceContainerHighest,
-                      valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
-                    ),
-                    Text(
-                      '${widget.stats.progress}%',
-                      style: tt.labelSmall?.copyWith(
-                        color: cs.onSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
 
           // Note
           if (progressNote.isNotEmpty)
@@ -385,15 +392,72 @@ class _HeaderState extends State<_Header> {
 
           // Flash message
           if (widget.flash.isNotEmpty) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(widget.flash,
                 style:
                     tt.bodySmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w500)),
           ],
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
         ],
       ),
+    );
+  }
+}
+
+// ── Repeat dialog ─────────────────────────────────────────────────────────────
+
+class _RepeatDialog extends StatefulWidget {
+  final int? initialValue;
+  const _RepeatDialog({this.initialValue});
+
+  @override
+  State<_RepeatDialog> createState() => _RepeatDialogState();
+}
+
+class _RepeatDialogState extends State<_RepeatDialog> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(
+      text: widget.initialValue != null ? widget.initialValue.toString() : '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Repeat tasks for how many days?'),
+      content: TextField(
+        controller: _ctrl,
+        keyboardType: TextInputType.number,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: 'Enter number of days',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final parsed = int.tryParse(_ctrl.text.trim());
+                  if (parsed == null || parsed <= 0 || parsed > 365) return;
+            Navigator.of(context).pop(parsed);
+          },
+          child: const Text('Confirm'),
+        ),
+      ],
     );
   }
 }
@@ -437,6 +501,174 @@ class _StatChip extends StatelessWidget {
   }
 }
 
+class _GradientCirclePainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final List<Color> colors;
+
+  _GradientCirclePainter({
+    required this.progress,
+    required this.trackColor,
+    required this.colors,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final strokeWidth = 10.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide / 2) - strokeWidth;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final gradient = SweepGradient(
+      startAngle: -math.pi / 2,
+      endAngle: 3 * math.pi / 2,
+      colors: colors,
+    );
+
+    final progressPaint = Paint()
+      ..shader = gradient.createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi, false, trackPaint);
+
+    final clamped = progress.clamp(0.0, 1.0);
+    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * clamped, false, progressPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _GradientCirclePainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.trackColor != trackColor ||
+        oldDelegate.colors != colors;
+  }
+}
+
+class CircularProgressBar extends StatelessWidget {
+  final double progress;
+
+  const CircularProgressBar({super.key, required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    const strokeWidth = 8.0;
+    const radius = 48.0;
+    final size = (radius * 2) + strokeWidth;
+    final clamped = progress.clamp(0.0, 1.0);
+    final reachedTarget = clamped >= 0.8;
+
+    final startColor = reachedTarget
+        ? const Color(0xFF7CD992)
+        : const Color(0xFFFF6B8A);
+    final endColor = reachedTarget
+        ? const Color(0xFF1FA34A)
+        : const Color(0xFFE8344E);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _HorseshoeProgressPainter(
+          progress: clamped,
+          trackColor: const Color(0xFFE0E0E0),
+          startColor: startColor,
+          endColor: endColor,
+          strokeWidth: strokeWidth,
+          radius: radius,
+        ),
+        child: Center(
+          child: Text(
+            '${(clamped * 100).round()}%',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF4A4A4A),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HorseshoeProgressPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color startColor;
+  final Color endColor;
+  final double strokeWidth;
+  final double radius;
+
+  _HorseshoeProgressPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.startColor,
+    required this.endColor,
+    required this.strokeWidth,
+    required this.radius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    const startAngle = (5 * math.pi) / 4; // bottom-left
+    const sweepAngle = (3 * math.pi) / 2; // 270 deg
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(rect, startAngle, sweepAngle, false, trackPaint);
+
+    if (progress <= 0) return;
+
+    final gradient = SweepGradient(
+      startAngle: startAngle,
+      endAngle: startAngle + sweepAngle,
+      colors: [startColor, endColor],
+    );
+
+    final progressPaint = Paint()
+      ..shader = gradient.createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final clamped = progress.clamp(0.0, 1.0);
+    final progressSweep = sweepAngle * clamped;
+    canvas.drawArc(rect, startAngle, progressSweep, false, progressPaint);
+
+    final endAngle = startAngle + progressSweep;
+    final endOffset = Offset(
+      center.dx + radius * math.cos(endAngle),
+      center.dy + radius * math.sin(endAngle),
+    );
+    final dotPaint = Paint()..color = endColor;
+    canvas.drawCircle(endOffset, strokeWidth / 2, dotPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _HorseshoeProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.trackColor != trackColor ||
+        oldDelegate.startColor != startColor ||
+        oldDelegate.endColor != endColor ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.radius != radius;
+  }
+}
+
 // ── Add task bar ──────────────────────────────────────────────────────────────
 
 class _AddTaskBar extends StatelessWidget {
@@ -464,7 +696,7 @@ class _AddTaskBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               decoration: InputDecoration(
-                hintText: 'Add a daily task…',
+                hintText: 'Add task',
                 isDense: true,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -565,7 +797,7 @@ class _TodayTab extends StatelessWidget {
               Text(
                 state.templates.isNotEmpty
                     ? 'Extend the repeat window to keep templates active.'
-                    : 'Create tasks, set priorities, and confirm to start your cycle.',
+                    : 'Create tasks, set priorities.',
                 style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
