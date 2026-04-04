@@ -51,8 +51,19 @@ AppState createInitialState() {
   );
 }
 
-List<Task> buildTasksFromTemplates(List<Task> templates) =>
-    templates.map((t) => t.copyWith(id: uid(), done: false)).toList();
+List<Task> _sortByPriority(List<Task> tasks) {
+  final sorted = [...tasks];
+  sorted.sort((a, b) {
+    final byWeight = b.priorityWeight.compareTo(a.priorityWeight);
+    if (byWeight != 0) return byWeight;
+    return a.createdAt.compareTo(b.createdAt);
+  });
+  return sorted;
+}
+
+List<Task> buildTasksFromTemplates(List<Task> templates) => _sortByPriority(
+    templates.map((t) => t.copyWith(id: uid(), done: false)).toList(),
+  );
 
 AppState archiveCurrentDay(AppState state) {
   if (state.currentTasks.isEmpty && state.templates.isEmpty) return state;
@@ -126,9 +137,9 @@ AppState addTask(AppState state, String text, String priorityLabel) {
     done: false,
     createdAt: DateTime.now().toIso8601String(),
   );
-  final templates = [...state.templates, task.copyWith(done: false)];
+  final templates = _sortByPriority([...state.templates, task.copyWith(done: false)]);
   final current = state.dayIndex <= state.repeatDays
-      ? [...state.currentTasks, task.copyWith(done: false)]
+      ? _sortByPriority([...state.currentTasks, task.copyWith(done: false)])
       : state.currentTasks;
   return state.copyWith(
     templates: templates,
@@ -162,12 +173,12 @@ AppState changePriority(AppState state, String templateId, String priorityLabel)
         priorityWeight: p['weight'] as int,
       );
   return state.copyWith(
-    templates: state.templates
+    templates: _sortByPriority(state.templates
         .map((t) => t.templateId == templateId ? update(t) : t)
-        .toList(),
-    currentTasks: state.currentTasks
+      .toList()),
+    currentTasks: _sortByPriority(state.currentTasks
         .map((t) => t.templateId == templateId ? update(t) : t)
-        .toList(),
+      .toList()),
     prioritiesConfirmed: false,
     clearConfirmedAt: true,
   );
