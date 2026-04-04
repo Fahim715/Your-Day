@@ -64,11 +64,22 @@ class _YourDayAppState extends State<YourDayApp> {
   }
 
   ThemeData _buildTheme(Brightness brightness) {
-    final seed = brightness == Brightness.dark
-        ? const Color(0xFFFF775D)
-        : const Color(0xFFCC4F39);
+    final isDark = brightness == Brightness.dark;
+    final scheme = ColorScheme(
+      brightness: brightness,
+      primary: isDark ? const Color(0xFFFF8A65) : const Color(0xFFC24E3A),
+      onPrimary: isDark ? const Color(0xFF1B1B1B) : const Color(0xFFFFFFFF),
+      secondary: isDark ? const Color(0xFF9A8F86) : const Color(0xFF7A6F68),
+      onSecondary: isDark ? const Color(0xFF0F1418) : const Color(0xFF2B211B),
+      error: const Color(0xFFB3261E),
+      onError: const Color(0xFFFFFFFF),
+      surface: isDark ? const Color(0xFF181E23) : const Color(0xFFFFF9F4),
+      onSurface: isDark ? const Color(0xFFE7E2DC) : const Color(0xFF2B211B),
+      background: isDark ? const Color(0xFF0F1418) : const Color(0xFFF7F2EE),
+      onBackground: isDark ? const Color(0xFFE7E2DC) : const Color(0xFF2B211B),
+    );
     return ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: brightness),
+      colorScheme: scheme,
       useMaterial3: true,
       appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
     );
