@@ -327,30 +327,50 @@ class _HeaderState extends State<_Header> {
 
           const SizedBox(height: 12),
 
-          // Progress bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: widget.stats.progress / 100,
-              minHeight: 6,
-              backgroundColor: cs.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
-            ),
-          ),
-          const SizedBox(height: 4),
+          // Progress summary + circle
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${widget.stats.completedWeight} / ${widget.stats.totalWeight} pts',
-                style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${widget.stats.completedWeight} / ${widget.stats.totalWeight} pts',
+                      style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.state.prioritiesConfirmed ? 'Confirmed ✓' : 'Pending',
+                      style: tt.labelSmall?.copyWith(
+                        color: widget.state.prioritiesConfirmed
+                            ? cs.primary
+                            : cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              Text(
-                widget.state.prioritiesConfirmed ? 'Confirmed ✓' : 'Pending',
-                style: tt.labelSmall?.copyWith(
-                  color: widget.state.prioritiesConfirmed
-                      ? cs.primary
-                      : cs.onSurfaceVariant,
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 56,
+                height: 56,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: widget.stats.progress / 100,
+                      strokeWidth: 6,
+                      backgroundColor: cs.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+                    ),
+                    Text(
+                      '${widget.stats.progress}%',
+                      style: tt.labelSmall?.copyWith(
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
