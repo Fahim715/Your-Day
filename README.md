@@ -27,9 +27,9 @@ Build habits across repeating cycles with a priority-weighted progress system.
 
 ## Screenshots
 
-| Today's Tasks | Bright Theme | Dark Theme |
+| Today's Tasks | Dark Theme | Bright Theme |
 |:---:|:---:|:---:|
-| ![Tasks](images/image01.jpg) | ![Bright](images/image02.jpg) | ![Dark](images/image04.jpg) |
+| ![Tasks](images/image01.jpg) | ![Bright](images/image02.jpg) | ![Dark](images/image03.jpg) |
 
 ---
 
