@@ -71,11 +71,23 @@ class _HomeScreenState extends State<HomeScreen>
     final stats = calculateProgress(s.currentTasks);
     final isCycleDone = s.dayIndex > s.repeatDays;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgImage = isDark
+        ? const AssetImage('images/dark_theme.jpeg')
+        : const AssetImage('images/bright_theme.jpeg');
+
     return Scaffold(
-      backgroundColor: cs.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: bgImage,
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
             _Header(
               state: s,
               stats: stats,
@@ -128,7 +140,8 @@ class _HomeScreenState extends State<HomeScreen>
                 ],
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
