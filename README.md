@@ -1,5 +1,9 @@
 <div align="center">
 
+<img src="assets/icon/app_icon.png" alt="Your Day app icon" width="96" height="96" />
+
+<br /><br />
+
 <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=flat-square&logo=android&logoColor=white" />
 <img src="https://img.shields.io/badge/Flutter-3.0+-02569B?style=flat-square&logo=flutter&logoColor=white" />
 <img src="https://img.shields.io/badge/Calendar-Hijri-8B4513?style=flat-square" />
@@ -37,14 +41,15 @@ Track your intentions across repeating cycles — anchored to the Islamic Hijri 
 
 ## What It Does
 
-**Your Day** lets you define a personal set of daily tasks, assign them priority weights, and track completion across a configurable repeat cycle (e.g. 40 days). Progress is weighted — not just a raw count — so high-priority tasks carry more significance.
+**Your Day** lets you define daily tasks, assign weighted priorities, and track progress across a repeat cycle anchored to the Hijri date. Progress is weighted (not just task count), and the horseshoe progress ring visually changes when you hit strong completion.
 
 | Feature | Detail |
 |---|---|
 | **Weighted priorities** | Low · Medium · High · *No way I can miss* → 1 / 2 / 5 / 10 pts |
-| **Weighted progress bar** | 100% split proportionally across all task weights |
+| **Horseshoe progress ring** | Pink→red under 80%, turns green at 80%+ |
 | **Hijri calendar** | Day counter anchored to the Islamic date |
-| **Repeat cycles** | Configurable cycle length; tasks reset each cycle |
+| **Repeat flow** | `Repeat For?` button opens a confirm dialog; then shows `Day x/N` |
+| **Reset controls** | `Reset Your Progress` or `Reset Everything` (with confirmation) |
 | **Daily archiving** | Each day's result is automatically saved to History |
 | **Dark / Light theme** | System-aware toggle in the app header |
 | **Fully offline** | No accounts, no network — everything stays on device |
@@ -54,10 +59,11 @@ Track your intentions across repeating cycles — anchored to the Islamic Hijri 
 ## How to Use
 
 1. **Add a task** — type in the input field, select a priority from the dropdown, tap **+**
-2. **Set your cycle** — use the **Repeat** field to choose how many days the task list runs before resetting
-3. **Check off tasks** — tap the checkbox next to a task; the weighted progress bar updates instantly
-4. **Confirm the day** — tap **Confirm** to lock in priority weights for that day
-5. **Review history** — switch to the **History** tab to see archived days and their final progress scores
+2. **Set repeat length** — tap **Repeat For?**, enter days (1 to 365), then tap **Confirm**
+3. **Track daily cycle** — the button changes to **Day x/N** and stays editable by tapping again
+4. **Check off tasks** — tap task check circles; weighted ring updates instantly
+5. **Review history** — open the **History** tab for archived day summaries
+6. **Use reset options** — tap **Reset** to clear progress only, or reset everything with confirmation
 
 > The date label uses the Islamic (Hijri) calendar and updates automatically based on your device timezone.
 
