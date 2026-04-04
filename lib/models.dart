@@ -231,12 +231,12 @@ class AppState {
 
   factory AppState.fromJson(Map<String, dynamic> j) => AppState(
         isDark: (j['isDark'] as bool?) ?? false,
-        repeatDays: (j['repeatDays'] as num?)?.toInt() ?? defaultRepeatDays,
+      repeatDays: (j['repeatDays'] as num?)?.toInt() ?? 0,
         cycleStartKey: (j['cycleStartKey'] as String?) ?? '',
         currentDayKey: (j['currentDayKey'] as String?) ?? '',
         currentDayLabel: (j['currentDayLabel'] as String?) ?? '',
         currentDayFullLabel: (j['currentDayFullLabel'] as String?) ?? '',
-        dayIndex: (j['dayIndex'] as num?)?.toInt() ?? 1,
+      dayIndex: (j['dayIndex'] as num?)?.toInt() ?? 0,
         templates: (j['templates'] as List<dynamic>? ?? [])
             .map((t) => Task.fromJson(t as Map<String, dynamic>))
             .toList(),

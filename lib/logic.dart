@@ -36,12 +36,12 @@ AppState createInitialState() {
   final cal = getCalendarInfo();
   return AppState(
     isDark: false,
-    repeatDays: defaultRepeatDays,
+    repeatDays: 0,
     cycleStartKey: cal.key,
     currentDayKey: cal.key,
     currentDayLabel: cal.label,
     currentDayFullLabel: cal.fullLabel,
-    dayIndex: 1,
+    dayIndex: 0,
     templates: const [],
     currentTasks: const [],
     history: const [],
