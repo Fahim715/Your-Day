@@ -14,7 +14,7 @@ Track your intentions across repeating cycles — anchored to the Islamic Hijri 
 
 <br />
 
-[![Download APK](https://img.shields.io/badge/⬇️%20Download%20APK-Latest%20Release-c0644a?style=for-the-badge)](https://github.com/Fahim715/Your-Day/releases/latest/download/YourDay.apk)
+[![Download APK](https://img.shields.io/badge/⬇️%20Download%20APK-Latest%20Release-c0644a?style=for-the-badge)](https://github.com/Fahim715/Your-Day/releases/download/v1.0.0/app-release.apk)
 
 > **First-time install on Android?**  
 > Settings → Apps → Special app access → Install unknown apps → your browser → **Allow**
