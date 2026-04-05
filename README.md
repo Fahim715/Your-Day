@@ -86,5 +86,5 @@ flutter build apk --release
 ---
 
 <div align="center">
-Runs fully offline. No data ever leaves your device.
+Built it for personal use. Runs fully offline. No data ever leaves your device.
 </div>
