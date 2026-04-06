@@ -6,6 +6,21 @@ import 'package:flutter/material.dart';
 import 'logic.dart';
 import 'models.dart';
 
+Color _priorityFontColor(String label, bool isDark) {
+  switch (label) {
+    case 'No way I can miss':
+      return const Color(0xFFD32F2F);
+    case 'High':
+      return isDark ? const Color(0xFFFBC02D) : const Color(0xFF6F4E37);
+    case 'Medium':
+      return const Color(0xFF1976D2);
+    case 'Low':
+      return isDark ? Colors.white : Colors.black;
+    default:
+      return isDark ? Colors.white : Colors.black;
+  }
+}
+
 class HomeScreen extends StatefulWidget {
   final AppState state;
   final void Function(AppState Function(AppState)) onUpdate;
@@ -79,79 +94,113 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: bgImage,
-            fit: BoxFit.cover,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image(image: bgImage, fit: BoxFit.cover),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-            _Header(
-              state: s,
-              stats: stats,
-              isCycleDone: isCycleDone,
-              flash: _flash,
-              onToggleTheme: () => widget.onUpdate(toggleTheme),
-              onConfirm: () {
-                if (s.currentTasks.isEmpty) {
-                  _showFlash('Add tasks before confirming.');
-                  return;
-                }
-                widget.onUpdate(confirmPriorities);
-                _showFlash('Priority weights confirmed.');
-              },
-              onRepeatChanged: (v) {
-                widget.onUpdate((s) => setRepeatDays(s, v));
-                _showFlash('Repeat set to $v days.');
-              },
-              onResetProgress: () {
-                widget.onUpdate(resetProgress);
-                _showFlash('Progress reset. History cleared.');
-              },
-              onResetEverything: () {
-                widget.onUpdate(resetEverything);
-                _showFlash('Everything reset.');
-              },
-            ),
-            _AddTaskBar(
-              controller: _taskCtrl,
-              priority: _draftPriority,
-              onPriorityChanged: (v) => setState(() => _draftPriority = v),
-              onAdd: _addTask,
-            ),
-            TabBar(
-              controller: _tabs,
-              labelColor: cs.primary,
-              unselectedLabelColor: cs.onSurfaceVariant,
-              indicatorColor: cs.primary,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: const [Tab(text: 'Today'), Tab(text: 'History')],
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabs,
-                children: [
-                  _TodayTab(
-                    state: s,
-                    stats: stats,
-                    onToggle: (id) => widget.onUpdate((s) => toggleTask(s, id)),
-                    onRemove: (id) {
-                      widget.onUpdate((s) => removeTask(s, id));
-                      _showFlash('Task removed.');
-                    },
-                    onPriorityChanged: (tid, p) =>
-                        widget.onUpdate((s) => changePriority(s, tid, p)),
-                  ),
-                  _HistoryTab(history: s.history.reversed.toList()),
-                ],
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDark
+                      ? [
+                          const Color(0xE61B2127),
+                          const Color(0xCC161C22),
+                          const Color(0xF210151A),
+                        ]
+                      : [
+                          const Color(0xD9FFF9F3),
+                          const Color(0xCCFFF5EA),
+                          const Color(0xEAFFF7F0),
+                        ],
+                ),
               ),
             ),
-            ],
           ),
-        ),
+          SafeArea(
+            child: Column(
+              children: [
+                _Header(
+                  state: s,
+                  stats: stats,
+                  isCycleDone: isCycleDone,
+                  flash: _flash,
+                  onToggleTheme: () => widget.onUpdate(toggleTheme),
+                  onRepeatChanged: (v) {
+                    widget.onUpdate((s) => setRepeatDays(s, v));
+                    _showFlash('Repeat set to $v days.');
+                  },
+                  onResetProgress: () {
+                    widget.onUpdate(resetProgress);
+                    _showFlash('Progress reset. History cleared.');
+                  },
+                  onResetEverything: () {
+                    widget.onUpdate(resetEverything);
+                    _showFlash('Everything reset.');
+                  },
+                ),
+                const SizedBox(height: 8),
+                _AddTaskBar(
+                  controller: _taskCtrl,
+                  priority: _draftPriority,
+                  onPriorityChanged: (v) => setState(() => _draftPriority = v),
+                  onAdd: _addTask,
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: cs.surface.withValues(alpha: isDark ? 0.62 : 0.86),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.55),
+                    ),
+                  ),
+                  child: TabBar(
+                    controller: _tabs,
+                    labelColor: cs.onPrimaryContainer,
+                    unselectedLabelColor: cs.onSurfaceVariant,
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    indicator: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: cs.primaryContainer,
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    tabs: const [
+                      Tab(text: 'Today'),
+                      Tab(text: 'History'),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabs,
+                    children: [
+                      _TodayTab(
+                        state: s,
+                        stats: stats,
+                        onToggle: (id) =>
+                            widget.onUpdate((s) => toggleTask(s, id)),
+                        onRemove: (id) {
+                          widget.onUpdate((s) => removeTask(s, id));
+                          _showFlash('Task removed.');
+                        },
+                        onPriorityChanged: (tid, p) =>
+                            widget.onUpdate((s) => changePriority(s, tid, p)),
+                      ),
+                      _HistoryTab(history: s.history.reversed.toList()),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -165,7 +214,6 @@ class _Header extends StatefulWidget {
   final bool isCycleDone;
   final String flash;
   final VoidCallback onToggleTheme;
-  final VoidCallback onConfirm;
   final void Function(int) onRepeatChanged;
   final VoidCallback onResetProgress;
   final VoidCallback onResetEverything;
@@ -176,7 +224,6 @@ class _Header extends StatefulWidget {
     required this.isCycleDone,
     required this.flash,
     required this.onToggleTheme,
-    required this.onConfirm,
     required this.onRepeatChanged,
     required this.onResetProgress,
     required this.onResetEverything,
@@ -191,16 +238,18 @@ class _HeaderState extends State<_Header> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final noWayTasks = widget.state.currentTasks
+        .where((t) => t.priorityLabel == 'No way I can miss')
+        .toList();
+    final allNoWayTasksCompleted = noWayTasks.every((t) => t.done);
 
     final progressNote = widget.isCycleDone
-      ? 'Repeat cycle done. Extend the repeat window to continue.'
-      : widget.state.prioritiesConfirmed
-        ? 'Weighted progress active.'
+        ? 'Repeat cycle done. Extend the repeat window to continue.'
         : '';
 
     final repeatLabel = widget.state.repeatDays <= 0
-      ? 'Repeat For?'
-      : 'Day ${widget.state.dayIndex <= 0 ? 1 : widget.state.dayIndex}/${widget.state.repeatDays}';
+        ? 'Repeat For?'
+        : 'Day ${widget.state.dayIndex <= 0 ? 1 : widget.state.dayIndex}/${widget.state.repeatDays}';
 
     Future<void> showResetDialog() async {
       await showDialog<void>(
@@ -261,7 +310,8 @@ class _HeaderState extends State<_Header> {
       final selectedDays = await showDialog<int>(
         context: context,
         builder: (_) => _RepeatDialog(
-          initialValue: widget.state.repeatDays > 0 ? widget.state.repeatDays : null,
+          initialValue:
+              widget.state.repeatDays > 0 ? widget.state.repeatDays : null,
         ),
       );
 
@@ -271,8 +321,22 @@ class _HeaderState extends State<_Header> {
     }
 
     return Container(
-      color: cs.surface,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      decoration: BoxDecoration(
+        color: cs.surface.withValues(alpha: widget.state.isDark ? 0.64 : 0.88),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: widget.state.isDark ? 0.22 : 0.07,
+            ),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -296,40 +360,52 @@ class _HeaderState extends State<_Header> {
                       widget.state.currentDayFullLabel.isEmpty
                           ? 'Your Day'
                           : widget.state.currentDayFullLabel,
-                      style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                      style: tt.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     // Stats row
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         _StatChip(
                           label: 'Tasks',
                           value: '${widget.state.currentTasks.length}',
                           highlight: true,
                         ),
+                        FilledButton.tonalIcon(
+                          onPressed: showRepeatForDialog,
+                          icon: const Icon(Icons.event_repeat, size: 16),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(128, 34),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 0,
+                            ),
+                          ),
+                          label: Text(repeatLabel),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Row(
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        OutlinedButton(
-                          onPressed: showRepeatForDialog,
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(112, 30),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(repeatLabel),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton(
+                        FilledButton.tonalIcon(
                           onPressed: showResetDialog,
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(66, 30),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          icon: const Icon(Icons.restart_alt, size: 16),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(92, 34),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 0,
+                            ),
                           ),
-                          child: const Text('Reset'),
+                          label: const Text('Reset'),
                         ),
                       ],
                     ),
@@ -342,8 +418,10 @@ class _HeaderState extends State<_Header> {
                 children: [
                   IconButton(
                     icon: Icon(
-                      widget.state.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                      size: 20,
+                      widget.state.isDark
+                          ? Icons.light_mode_outlined
+                          : Icons.dark_mode_outlined,
+                      size: 22,
                     ),
                     onPressed: widget.onToggleTheme,
                     tooltip: widget.state.isDark ? 'Light theme' : 'Dark theme',
@@ -361,7 +439,7 @@ class _HeaderState extends State<_Header> {
                           width: 96,
                           height: 96,
                           decoration: BoxDecoration(
-                            color: cs.surface.withOpacity(0.75),
+                            color: cs.surface.withValues(alpha: 0.75),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -372,8 +450,10 @@ class _HeaderState extends State<_Header> {
                           ),
                           duration: const Duration(milliseconds: 800),
                           curve: Curves.easeOutCubic,
-                          builder: (context, value, _) =>
-                              CircularProgressBar(progress: value),
+                          builder: (context, value, _) => CircularProgressBar(
+                            progress: value,
+                            allNoWayTasksCompleted: allNoWayTasksCompleted,
+                          ),
                         ),
                       ],
                     ),
@@ -387,18 +467,33 @@ class _HeaderState extends State<_Header> {
 
           // Note
           if (progressNote.isNotEmpty)
-            Text(progressNote,
-                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+            Text(
+              progressNote,
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
 
           // Flash message
           if (widget.flash.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(widget.flash,
-                style:
-                    tt.bodySmall?.copyWith(color: cs.primary, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 8),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                widget.flash,
+                style: tt.bodySmall?.copyWith(
+                  color: cs.onPrimaryContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
 
-          const SizedBox(height: 6),
+          const SizedBox(height: 2),
         ],
       ),
     );
@@ -440,9 +535,7 @@ class _RepeatDialogState extends State<_RepeatDialog> {
         controller: _ctrl,
         keyboardType: TextInputType.number,
         autofocus: true,
-        decoration: const InputDecoration(
-          hintText: 'Enter number of days',
-        ),
+        decoration: const InputDecoration(hintText: 'Enter number of days'),
       ),
       actions: [
         TextButton(
@@ -452,7 +545,7 @@ class _RepeatDialogState extends State<_RepeatDialog> {
         FilledButton(
           onPressed: () {
             final parsed = int.tryParse(_ctrl.text.trim());
-                  if (parsed == null || parsed <= 0 || parsed > 365) return;
+            if (parsed == null || parsed <= 0 || parsed > 365) return;
             Navigator.of(context).pop(parsed);
           },
           child: const Text('Confirm'),
@@ -477,99 +570,66 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: highlight ? cs.primaryContainer : cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        color: highlight ? cs.primaryContainer : cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.55)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: highlight ? cs.onPrimaryContainer : cs.onSurface,
-              )),
-          Text(label,
-              style: TextStyle(
-                fontSize: 10,
-                color: highlight ? cs.onPrimaryContainer : cs.onSurfaceVariant,
-              )),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: highlight ? cs.onPrimaryContainer : cs.onSurface,
+            ),
+          ),
+          const SizedBox(height: 1),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: highlight ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _GradientCirclePainter extends CustomPainter {
+class CircularProgressBar extends StatelessWidget {
   final double progress;
-  final Color trackColor;
-  final List<Color> colors;
+  final bool allNoWayTasksCompleted;
 
-  _GradientCirclePainter({
+  const CircularProgressBar({
+    super.key,
     required this.progress,
-    required this.trackColor,
-    required this.colors,
+    required this.allNoWayTasksCompleted,
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final strokeWidth = 10.0;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.shortestSide / 2) - strokeWidth;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-
-    final trackPaint = Paint()
-      ..color = trackColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final gradient = SweepGradient(
-      startAngle: -math.pi / 2,
-      endAngle: 3 * math.pi / 2,
-      colors: colors,
-    );
-
-    final progressPaint = Paint()
-      ..shader = gradient.createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi, false, trackPaint);
-
-    final clamped = progress.clamp(0.0, 1.0);
-    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * clamped, false, progressPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _GradientCirclePainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.trackColor != trackColor ||
-        oldDelegate.colors != colors;
-  }
-}
-
-class CircularProgressBar extends StatelessWidget {
-  final double progress;
-
-  const CircularProgressBar({super.key, required this.progress});
-
-  @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     const strokeWidth = 8.0;
     const radius = 48.0;
     final size = (radius * 2) + strokeWidth;
     final clamped = progress.clamp(0.0, 1.0);
-    final reachedTarget = clamped >= 0.8;
+    final progressPercent = (clamped * 100).round();
 
-    final startColor = reachedTarget
-        ? const Color(0xFF7CD992)
-        : const Color(0xFFFF6B8A);
-    final endColor = reachedTarget
-        ? const Color(0xFF1FA34A)
-        : const Color(0xFFE8344E);
+    Color lineColor;
+    if (progressPercent >= 100) {
+      lineColor = const Color(0xFFFFC107); // Golden
+    } else {
+      lineColor = allNoWayTasksCompleted
+          ? (progressPercent >= 80
+              ? const Color(0xFF1E8A4E) // Green
+              : const Color(0xFF1976D2)) // Blue
+          : const Color(0xFFD32F2F); // Red
+    }
 
     return SizedBox(
       width: size,
@@ -577,19 +637,19 @@ class CircularProgressBar extends StatelessWidget {
       child: CustomPaint(
         painter: _HorseshoeProgressPainter(
           progress: clamped,
-          trackColor: const Color(0xFFE0E0E0),
-          startColor: startColor,
-          endColor: endColor,
+          trackColor: cs.surfaceContainerHighest,
+          startColor: lineColor,
+          endColor: lineColor,
           strokeWidth: strokeWidth,
           radius: radius,
         ),
         child: Center(
           child: Text(
             '${(clamped * 100).round()}%',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF4A4A4A),
+              color: cs.onSurface,
             ),
           ),
         ),
@@ -687,69 +747,108 @@ class _AddTaskBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      color: cs.surfaceContainerLowest,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'Add task',
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: cs.outline),
-                ),
-                filled: true,
-                fillColor: cs.surface,
-              ),
-              onSubmitted: (_) => onAdd(),
-              textInputAction: TextInputAction.done,
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Priority picker
-          Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: cs.outline),
-              borderRadius: BorderRadius.circular(10),
-              color: cs.surface,
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: priority,
-                isDense: true,
-                style: TextStyle(fontSize: 13, color: cs.onSurface),
-                items: priorityOptions
-                    .map((p) => DropdownMenuItem(
-                          value: p['label'] as String,
-                          child: Text(p['label'] as String),
-                        ))
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) onPriorityChanged(v);
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton.filled(
-            onPressed: onAdd,
-            icon: const Icon(Icons.add, size: 20),
-            style: IconButton.styleFrom(
-              backgroundColor: cs.primary,
-              foregroundColor: cs.onPrimary,
-              minimumSize: const Size(42, 42),
-            ),
-          ),
-        ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isNarrow = MediaQuery.sizeOf(context).width < 390;
+    final addPriorityColor = _priorityFontColor(priority, isDark);
+    final priorityBoxColor =
+        isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest;
+
+    final inputField = TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: 'Add task',
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: cs.outlineVariant),
+        ),
+        filled: true,
+        fillColor: cs.surface,
       ),
+      onSubmitted: (_) => onAdd(),
+      textInputAction: TextInputAction.done,
+    );
+
+    final controls = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: 42,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: cs.outlineVariant),
+            borderRadius: BorderRadius.circular(12),
+            color: priorityBoxColor,
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: priority,
+              isDense: true,
+              dropdownColor: priorityBoxColor,
+              style: TextStyle(fontSize: 12.5, color: addPriorityColor),
+              items: priorityOptions
+                  .map(
+                    (p) => DropdownMenuItem(
+                      value: p['label'] as String,
+                      child: Text(
+                        p['label'] as String,
+                        style: TextStyle(
+                          color: _priorityFontColor(
+                            p['label'] as String,
+                            isDark,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) onPriorityChanged(v);
+              },
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton.filled(
+          onPressed: onAdd,
+          icon: const Icon(Icons.add, size: 20),
+          style: IconButton.styleFrom(
+            backgroundColor: cs.primary,
+            foregroundColor: cs.onPrimary,
+            minimumSize: const Size(42, 42),
+          ),
+        ),
+      ],
+    );
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surface.withValues(alpha: 0.86),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.55)),
+      ),
+      child: isNarrow
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                inputField,
+                const SizedBox(height: 8),
+                Align(alignment: Alignment.centerRight, child: controls),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(child: inputField),
+                const SizedBox(width: 8),
+                controls,
+              ],
+            ),
     );
   }
 }
@@ -783,8 +882,11 @@ class _TodayTab extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.check_circle_outline,
-                  size: 48, color: cs.onSurfaceVariant),
+              Icon(
+                Icons.check_circle_outline,
+                size: 48,
+                color: cs.onSurfaceVariant,
+              ),
               const SizedBox(height: 12),
               Text(
                 state.templates.isNotEmpty
@@ -808,9 +910,9 @@ class _TodayTab extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       itemCount: state.currentTasks.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 4),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         final task = state.currentTasks[i];
         final share = stats.totalWeight > 0
@@ -844,16 +946,8 @@ class _TaskCard extends StatelessWidget {
   });
 
   Color _priorityColor(ColorScheme cs) {
-    switch (task.priorityLabel) {
-      case 'High':
-        return cs.error;
-      case 'No way I can miss':
-        return cs.error;
-      case 'Medium':
-        return cs.primary;
-      default:
-        return cs.onSurfaceVariant;
-    }
+    final isDark = cs.brightness == Brightness.dark;
+    return _priorityFontColor(task.priorityLabel, isDark);
   }
 
   @override
@@ -861,22 +955,34 @@ class _TaskCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final pColor = _priorityColor(cs);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final priorityBaseBg =
+        isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest;
 
     return Container(
       decoration: BoxDecoration(
         color: task.done
-            ? cs.surfaceContainerHighest.withOpacity(0.5)
-            : cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+            ? cs.surfaceContainerHighest.withValues(alpha: 0.58)
+            : cs.surfaceContainerLow.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: task.done ? cs.outline.withOpacity(0.3) : cs.outline.withOpacity(0.5),
+          color: task.done
+              ? cs.outlineVariant.withValues(alpha: 0.5)
+              : cs.outlineVariant.withValues(alpha: 0.72),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         onTap: onToggle,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -919,7 +1025,9 @@ class _TaskCard extends StatelessWidget {
                             style: tt.bodyMedium?.copyWith(
                               decoration:
                                   task.done ? TextDecoration.lineThrough : null,
-                              color: task.done ? cs.onSurfaceVariant : cs.onSurface,
+                              color: task.done
+                                  ? cs.onSurfaceVariant
+                                  : cs.onSurface,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -939,32 +1047,50 @@ class _TaskCard extends StatelessWidget {
                       children: [
                         // Priority dropdown
                         SizedBox(
-                          height: 28,
+                          height: 30,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 7),
                             decoration: BoxDecoration(
-                              border: Border.all(color: pColor.withOpacity(0.4)),
-                              borderRadius: BorderRadius.circular(6),
-                              color: pColor.withOpacity(0.08),
+                              border: Border.all(
+                                color: pColor.withValues(alpha: 0.4),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              color: Color.alphaBlend(
+                                pColor.withValues(alpha: 0.12),
+                                priorityBaseBg,
+                              ),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: task.priorityLabel,
                                 isDense: true,
+                                dropdownColor: priorityBaseBg,
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: pColor,
                                   fontWeight: FontWeight.w600,
                                 ),
-                                icon: Icon(Icons.expand_more,
-                                    size: 14, color: pColor),
+                                icon: Icon(
+                                  Icons.expand_more,
+                                  size: 14,
+                                  color: pColor,
+                                ),
                                 items: priorityOptions
-                                    .map((p) => DropdownMenuItem(
-                                          value: p['label'] as String,
-                                          child: Text(p['label'] as String,
-                                              style: const TextStyle(
-                                                  fontSize: 12)),
-                                        ))
+                                    .map(
+                                      (p) => DropdownMenuItem(
+                                        value: p['label'] as String,
+                                        child: Text(
+                                          p['label'] as String,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: _priorityFontColor(
+                                              p['label'] as String,
+                                              isDark,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
                                     .toList(),
                                 onChanged: (v) {
                                   if (v != null) onPriorityChanged(v);
@@ -976,10 +1102,15 @@ class _TaskCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: pColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
+                            color: Color.alphaBlend(
+                              pColor.withValues(alpha: 0.15),
+                              priorityBaseBg,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             'w: ${task.priorityWeight}',
@@ -1001,7 +1132,11 @@ class _TaskCard extends StatelessWidget {
                 onTap: onRemove,
                 child: Padding(
                   padding: const EdgeInsets.only(left: 8, top: 2),
-                  child: Icon(Icons.close, size: 18, color: cs.onSurfaceVariant),
+                  child: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
@@ -1050,18 +1185,41 @@ class _HistoryTab extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       itemCount: history.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 4),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         final r = history[i];
+        final hasMissedNoWay = r.tasks.any(
+          (t) => t.priorityLabel == 'No way I can miss' && !t.done,
+        );
+        final allTasksCompleted =
+            r.taskCount > 0 && r.completedTaskCount == r.taskCount;
+        final allNoWayCompleted = !hasMissedNoWay;
+
+        final percentColor = allTasksCompleted
+            ? const Color(0xFFFFC107)
+            : hasMissedNoWay
+                ? const Color(0xFFD32F2F)
+                : (allNoWayCompleted && r.progress >= 80)
+                    ? const Color(0xFF1E8A4E)
+                    : cs.primary;
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-            border:
-                Border.all(color: cs.outline.withOpacity(0.4)),
+            color: cs.surfaceContainerLow.withValues(alpha: 0.84),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: cs.outlineVariant.withValues(alpha: 0.62),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.035),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -1069,26 +1227,22 @@ class _HistoryTab extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(r.fullLabel,
-                        style: tt.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 2),
                     Text(
-                      '${r.completedTaskCount} of ${r.taskCount} tasks done',
-                      style: tt.bodySmall
-                          ?.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: r.progress / 100,
-                        minHeight: 4,
-                        backgroundColor: cs.surfaceContainerHighest,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(cs.primary),
+                      r.fullLabel,
+                      style: tt.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                    if (hasMissedNoWay) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'You missed what shouldn\'t have.',
+                        style: tt.bodySmall?.copyWith(
+                          color: const Color(0xFFD32F2F),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1100,13 +1254,9 @@ class _HistoryTab extends StatelessWidget {
                     '${r.progress}%',
                     style: tt.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: cs.primary,
+                      color: percentColor,
+                      fontSize: 20,
                     ),
-                  ),
-                  Text(
-                    '${r.completedWeight}/${r.totalWeight} pts',
-                    style: tt.labelSmall
-                        ?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ],
               ),

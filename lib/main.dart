@@ -35,7 +35,8 @@ class _YourDayAppState extends State<YourDayApp> {
     try {
       final raw = widget.prefs.getString(_key);
       if (raw == null) return createInitialState();
-      return advanceToToday(AppState.fromJson(jsonDecode(raw) as Map<String, dynamic>));
+      return advanceToToday(
+          AppState.fromJson(jsonDecode(raw) as Map<String, dynamic>));
     } catch (_) {
       return createInitialState();
     }
@@ -65,23 +66,72 @@ class _YourDayAppState extends State<YourDayApp> {
 
   ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final scheme = ColorScheme(
+    final scheme = ColorScheme.fromSeed(
+      seedColor: isDark ? const Color(0xFFF18C5A) : const Color(0xFFC64C2E),
       brightness: brightness,
-      primary: isDark ? const Color(0xFFFF8A65) : const Color(0xFFC24E3A),
-      onPrimary: isDark ? const Color(0xFF1B1B1B) : const Color(0xFFFFFFFF),
-      secondary: isDark ? const Color(0xFF9A8F86) : const Color(0xFF7A6F68),
-      onSecondary: isDark ? const Color(0xFF0F1418) : const Color(0xFF2B211B),
-      error: const Color(0xFFB3261E),
-      onError: const Color(0xFFFFFFFF),
-      surface: isDark ? const Color(0xFF181E23) : const Color(0xFFFFF9F4),
-      onSurface: isDark ? const Color(0xFFE7E2DC) : const Color(0xFF2B211B),
-      background: isDark ? const Color(0xFF0F1418) : const Color(0xFFF7F2EE),
-      onBackground: isDark ? const Color(0xFFE7E2DC) : const Color(0xFF2B211B),
+      surface: isDark ? const Color(0xFF151A1E) : const Color(0xFFFFF8F1),
     );
+
+    final textTheme = ThemeData(brightness: brightness).textTheme.apply(
+          bodyColor: scheme.onSurface,
+          displayColor: scheme.onSurface,
+        );
+
     return ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
-      appBarTheme: const AppBarTheme(centerTitle: false, elevation: 0),
+      scaffoldBackgroundColor: scheme.surface,
+      textTheme: textTheme.copyWith(
+        headlineSmall: textTheme.headlineSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
+        ),
+        titleLarge: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.15,
+        ),
+        titleMedium: textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      appBarTheme: AppBarTheme(
+        centerTitle: false,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: scheme.onSurface,
+      ),
+      cardTheme: CardThemeData(
+        color: scheme.surfaceContainerLow,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side:
+              BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: scheme.surface,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: scheme.primary, width: 1.6),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        side: BorderSide(color: scheme.outlineVariant),
+        selectedColor: scheme.primaryContainer,
+      ),
     );
   }
 }

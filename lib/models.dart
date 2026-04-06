@@ -85,7 +85,8 @@ class Task {
       priorityLabel: p['label'] as String,
       priorityWeight: p['weight'] as int,
       done: (j['done'] as bool?) ?? false,
-      createdAt: (j['createdAt'] as String?) ?? DateTime.now().toIso8601String(),
+      createdAt:
+          (j['createdAt'] as String?) ?? DateTime.now().toIso8601String(),
     );
   }
 }
@@ -133,13 +134,15 @@ class DayRecord {
   factory DayRecord.fromJson(Map<String, dynamic> j) => DayRecord(
         dayKey: (j['dayKey'] as String?) ?? '',
         dayLabel: (j['dayLabel'] as String?) ?? '',
-        fullLabel: (j['fullLabel'] as String?) ?? (j['dayLabel'] as String?) ?? '',
+        fullLabel:
+            (j['fullLabel'] as String?) ?? (j['dayLabel'] as String?) ?? '',
         progress: (j['progress'] as num?)?.toInt() ?? 0,
         totalWeight: (j['totalWeight'] as num?)?.toInt() ?? 0,
         completedWeight: (j['completedWeight'] as num?)?.toInt() ?? 0,
         taskCount: (j['taskCount'] as num?)?.toInt() ?? 0,
         completedTaskCount: (j['completedTaskCount'] as num?)?.toInt() ?? 0,
-        archivedAt: (j['archivedAt'] as String?) ?? DateTime.now().toIso8601String(),
+        archivedAt:
+            (j['archivedAt'] as String?) ?? DateTime.now().toIso8601String(),
         tasks: (j['tasks'] as List<dynamic>? ?? [])
             .map((t) => Task.fromJson(t as Map<String, dynamic>))
             .toList(),
@@ -161,8 +164,6 @@ class AppState {
   final List<Task> templates;
   final List<Task> currentTasks;
   final List<DayRecord> history;
-  final bool prioritiesConfirmed;
-  final String? confirmedAt;
   final String lastSyncedAt;
 
   const AppState({
@@ -176,8 +177,6 @@ class AppState {
     required this.templates,
     required this.currentTasks,
     required this.history,
-    required this.prioritiesConfirmed,
-    required this.confirmedAt,
     required this.lastSyncedAt,
   });
 
@@ -192,9 +191,6 @@ class AppState {
     List<Task>? templates,
     List<Task>? currentTasks,
     List<DayRecord>? history,
-    bool? prioritiesConfirmed,
-    String? confirmedAt,
-    bool clearConfirmedAt = false,
     String? lastSyncedAt,
   }) =>
       AppState(
@@ -208,8 +204,6 @@ class AppState {
         templates: templates ?? this.templates,
         currentTasks: currentTasks ?? this.currentTasks,
         history: history ?? this.history,
-        prioritiesConfirmed: prioritiesConfirmed ?? this.prioritiesConfirmed,
-        confirmedAt: clearConfirmedAt ? null : (confirmedAt ?? this.confirmedAt),
         lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       );
 
@@ -224,19 +218,17 @@ class AppState {
         'templates': templates.map((t) => t.toJson()).toList(),
         'currentTasks': currentTasks.map((t) => t.toJson()).toList(),
         'history': history.map((r) => r.toJson()).toList(),
-        'prioritiesConfirmed': prioritiesConfirmed,
-        'confirmedAt': confirmedAt,
         'lastSyncedAt': lastSyncedAt,
       };
 
   factory AppState.fromJson(Map<String, dynamic> j) => AppState(
         isDark: (j['isDark'] as bool?) ?? false,
-      repeatDays: (j['repeatDays'] as num?)?.toInt() ?? 0,
+        repeatDays: (j['repeatDays'] as num?)?.toInt() ?? 0,
         cycleStartKey: (j['cycleStartKey'] as String?) ?? '',
         currentDayKey: (j['currentDayKey'] as String?) ?? '',
         currentDayLabel: (j['currentDayLabel'] as String?) ?? '',
         currentDayFullLabel: (j['currentDayFullLabel'] as String?) ?? '',
-      dayIndex: (j['dayIndex'] as num?)?.toInt() ?? 0,
+        dayIndex: (j['dayIndex'] as num?)?.toInt() ?? 0,
         templates: (j['templates'] as List<dynamic>? ?? [])
             .map((t) => Task.fromJson(t as Map<String, dynamic>))
             .toList(),
@@ -246,8 +238,6 @@ class AppState {
         history: (j['history'] as List<dynamic>? ?? [])
             .map((r) => DayRecord.fromJson(r as Map<String, dynamic>))
             .toList(),
-        prioritiesConfirmed: (j['prioritiesConfirmed'] as bool?) ?? false,
-        confirmedAt: j['confirmedAt'] as String?,
         lastSyncedAt:
             (j['lastSyncedAt'] as String?) ?? DateTime.now().toIso8601String(),
       );
@@ -269,7 +259,8 @@ class ProgressStats {
 
 ProgressStats calculateProgress(List<Task> tasks) {
   final total = tasks.fold(0, (sum, t) => sum + t.priorityWeight);
-  final completed = tasks.fold(0, (sum, t) => sum + (t.done ? t.priorityWeight : 0));
+  final completed =
+      tasks.fold(0, (sum, t) => sum + (t.done ? t.priorityWeight : 0));
   final progress = total > 0 ? ((completed / total) * 100).round() : 0;
   return ProgressStats(
     totalWeight: total,
